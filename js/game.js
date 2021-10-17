@@ -15,21 +15,39 @@ class Pawn{
     Update(tarjetPos){
         this.pos = [this.pos[0]+tarjetPos[0], this.pos[1]+tarjetPos[1]];
         // console.log(this.pos);
-    }    
+    }  
 }
 
 class Projectile extends Pawn{
-    constructor(size, pos, color, speed, targetPos){
+    constructor(size, pos, color, speed, targetPos, centerCanvas){
         super(size, pos, color, speed);
 
         // Getting vector towards player normalized
         let vec = [targetPos[0] - pos[0], targetPos[1] - pos[1]];
         let mod = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
         this.speed = [vec[0]*speed/mod, vec[1]*speed/mod] // Applying speed also
+        this.centerCanvas = centerCanvas;
+        this.distDespawn = Math.sqrt(centerCanvas[0]*centerCanvas[0] + centerCanvas[1]*centerCanvas[1]) + 5*size;
+        this.destroy = false;
     }
 
     Update(){
         super.Update(this.speed);
+    }
+
+    CheckDestroyed(){
+        // The circule of despawn is iqual to: Lenght of square to center of canvas (hypotenuse)
+        // + 5 times the size of the of the projectal (so don't insta despawn when created outside)
+        // All of this is calculated by the center of the projectiles not the border, so the center
+        // of the projectiles have to pass the limit
+        
+        // Getting dist to center of canvas = hypotenuse
+        let dist = [this.centerCanvas[0]-this.pos[0],this.centerCanvas[1]-this.pos[1]];
+        dist = Math.sqrt(dist[0]*dist[0] + dist[1]*dist[1]);
+        
+        if (dist > this.distDespawn){
+            
+        }
     }
 }
 
@@ -96,7 +114,7 @@ class Game{
         Display.Draw(this.myGameState, this.context);
     }
 
-    spawnPlayer(size, pos, color, speed, name){
+    SpawnPlayer(size, pos, color, speed, name){
         // const x = innerWidth / 2;
         // const y = innerHeight / 2;
         // const size = 50;
@@ -109,7 +127,7 @@ class Game{
         this.myGameState.AddPlayer(newPlayer);
     }
     
-    spawnProjectile(size, pos, color, speed, posTarjet){
+    SpawnProjectile(size, pos, color, speed, posTarjet){
         // const x = innerWidth / 2;
         // const y = innerHeight / 2;
         // const size = 30;
@@ -122,7 +140,7 @@ class Game{
         this.myGameState.AddProjectiles(newProj);
     }
     
-    spawnIncomingProjectiles(numProj, maxSize, minSize, posTarget){
+    SpawnIncomingProjectiles(numProj, maxSize, minSize, posTarget){
         const tam = canvas.getBoundingClientRect();
         const center = [tam.width/2, tam.height/2];
         const radius = Math.sqrt(center[0]*center[0]+center[1]*center[1]) + maxSize;
@@ -133,27 +151,29 @@ class Game{
             const randAngPos = Math.random() * (Math.PI*2);
             const x = center[0] + radius * Math.cos(randAngPos);
             const y = center[1] + radius * Math.sin(randAngPos);
-            this.spawnProjectile(randSize, [x,y], 'red', 5, posTarget);
+            this.SpawnProjectile(randSize, [x,y], 'red', 5, posTarget);
             console.log([x,y]);
         }
     }
+
+    
 }
 
 // defaultPlayer();
 // defaultProjectile();
 let myGame = new Game(context);
-myGame.spawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 0, '');
+myGame.SpawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 0, '');
 myGame.Run();
 
 
 // Move this to his own class in the future
 addEventListener('click', (e) => {
-    myGame.spawnProjectile(20, [e.x,e.y], 'red', 3, [innerWidth/2,innerHeight/2]);
+    myGame.SpawnProjectile(20, [e.x,e.y], 'red', 3, [innerWidth/2,innerHeight/2]);
 });
 
 document.addEventListener('keypress', (e) => {
     if (e.key == 'q'){
-        myGame.spawnIncomingProjectiles(10, 30, 15, [innerWidth/2,innerHeight/2]);
+        myGame.SpawnIncomingProjectiles(10, 30, 15, [innerWidth/2,innerHeight/2]);
     }
 
 });
