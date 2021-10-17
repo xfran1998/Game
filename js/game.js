@@ -12,16 +12,9 @@ class Pawn{
         this.speed = speed;
     }
 
-    Draw(){
-        context.beginPath();
-        context.arc(this.pos[0], this.pos[1], this.size, 0, Math.PI*2, false);  
-        context.fillStyle = this.color;           
-        context.fill(); 
-    }
-
     Update(tarjetPos){
         this.pos = [this.pos[0]+tarjetPos[0], this.pos[1]+tarjetPos[1]];
-        console.log(this.pos);
+        // console.log(this.pos);
     }    
 }
 
@@ -62,9 +55,36 @@ class GameState{
     }
 }
 
+class Display{
+    static Draw(myGameState, context){
+        Display.ClearScreen(context);
+
+        myGameState.projectiles.forEach(proj => {
+            Display.DrawPawn(proj, context);
+        });
+        
+        myGameState.players.forEach(player => {
+            Display.DrawPawn(player, context);
+        });
+    }
+
+    static DrawPawn(pawn, context){
+        context.beginPath();
+        context.arc(pawn.pos[0], pawn.pos[1], pawn.size, 0, Math.PI*2, false);  
+        context.fillStyle = pawn.color;           
+        context.fill(); 
+    }
+
+    static ClearScreen(context){
+        const tam = canvas.getBoundingClientRect();
+        context.clearRect(0, 0, tam.width, tam.height);
+    }
+}
+
 class Game{
-    constructor(){
+    constructor(context){
         this.myGameState = new GameState();
+        this.context = context;
     }
 
     Run(){
@@ -72,17 +92,7 @@ class Game{
         this.myGameState.projectiles.forEach(proj => {
             proj.Update();
         });
-        this.Redraw();
-    }
-
-    Redraw(){
-        this.myGameState.projectiles.forEach(proj => {
-            proj.Draw();
-        });
-        
-        this.myGameState.players.forEach(player => {
-            player.Draw();
-        });
+        Display.Draw(this.myGameState, this.context);
     }
 
     spawnPlayer(size, pos, color, speed, name){
@@ -96,7 +106,6 @@ class Game{
     
         const newPlayer = new Player(size, pos, color, speed, name);
         this.myGameState.AddPlayer(newPlayer);
-        newPlayer.Draw();
     }
     
     spawnProjectile(size, pos, color, speed, posTarjet){
@@ -110,15 +119,14 @@ class Game{
         // +size/2
         const newProj = new Projectile(size, pos, color, speed, posTarjet);
         this.myGameState.AddProjectiles(newProj);
-        newProj.Draw();
     }
 }
 
 // defaultPlayer();
 // defaultProjectile();
-let myGame = new Game();
-myGame.spawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 0, '')
-myGame.Run();
+let myGame = new Game(context);
+myGame.spawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 0, '');
+// myGame.Run();
 
 addEventListener('click', (e) => {
     // console.log([e.x,e.y]);
