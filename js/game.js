@@ -44,6 +44,7 @@ class GameState{
     constructor(){
         this.players = new Array();
         this.projectiles = new Array();
+        this.spawnProjectiles = false;
     }
 
     AddPlayer(player){
@@ -120,15 +121,39 @@ class Game{
         const newProj = new Projectile(size, pos, color, speed, posTarjet);
         this.myGameState.AddProjectiles(newProj);
     }
+    
+    spawnIncomingProjectiles(numProj, maxSize, minSize, posTarget){
+        const tam = canvas.getBoundingClientRect();
+        const center = [tam.width/2, tam.height/2];
+        const radius = Math.sqrt(center[0]*center[0]+center[1]*center[1]) + maxSize;
+        console.log(radius);
+        
+        for (let i=0; i < numProj; i++){
+            const randSize = Math.random() * (maxSize - minSize) + minSize;
+            const randAngPos = Math.random() * (Math.PI*2);
+            const x = center[0] + radius * Math.cos(randAngPos);
+            const y = center[1] + radius * Math.sin(randAngPos);
+            this.spawnProjectile(randSize, [x,y], 'red', 5, posTarget);
+            console.log([x,y]);
+        }
+    }
 }
 
 // defaultPlayer();
 // defaultProjectile();
 let myGame = new Game(context);
 myGame.spawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 0, '');
-// myGame.Run();
+myGame.Run();
 
+
+// Move this to his own class in the future
 addEventListener('click', (e) => {
-    // console.log([e.x,e.y]);
-    myGame.spawnProjectile(20, [e.x,e.y], 'red', 5, [innerWidth/2,innerHeight/2]);
+    myGame.spawnProjectile(20, [e.x,e.y], 'red', 3, [innerWidth/2,innerHeight/2]);
+});
+
+document.addEventListener('keypress', (e) => {
+    if (e.key == 'q'){
+        myGame.spawnIncomingProjectiles(10, 30, 15, [innerWidth/2,innerHeight/2]);
+    }
+
 });
