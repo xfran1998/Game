@@ -189,3 +189,11 @@ setInterval(() => {
     myGame.DespawnProjectile();
     console.log(myGame.myGameState.projectiles);
 }, 1000)
+
+// To do:
+
+// Projectile will be 2 things:
+// 1: Projectile from player to mouse pointer when player click (posible couldown)
+// 2: Projectiles that go to player last position
+
+// Player can move on his field but never go throw
