@@ -14,7 +14,6 @@ class Pawn{
 
     Update(tarjetPos){
         this.pos = [this.pos[0]+tarjetPos[0], this.pos[1]+tarjetPos[1]];
-        // console.log(this.pos);
     }  
 }
 
@@ -175,25 +174,19 @@ myGame.Run();
 
 // Move this to his own class in the future
 addEventListener('click', (e) => {
-    myGame.SpawnProjectile(20, [e.x,e.y], 'red', 5, [innerWidth/2,innerHeight/2]);
+    myGame.SpawnProjectile(15, [innerWidth/2,innerHeight/2], 'red', 10, [e.x,e.y]);
 });
 
 document.addEventListener('keypress', (e) => {
     if (e.key == 'q'){
-        myGame.SpawnIncomingProjectiles(2, 30, 15, [innerWidth/2,innerHeight/2]);
+        myGame.SpawnIncomingProjectiles(5, 30, 15, [innerWidth/2,innerHeight/2]);
     }
-
 });
 
 setInterval(() => {
     myGame.DespawnProjectile();
-    console.log(myGame.myGameState.projectiles);
-}, 1000)
+    // console.log(myGame.myGameState.projectiles);
+}, 1000);
 
-// To do:
-
-// Projectile will be 2 things:
-// 1: Projectile from player to mouse pointer when player click (posible couldown)
-// 2: Projectiles that go to player last position
 
 // Player can move on his field but never go throw
