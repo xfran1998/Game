@@ -28,7 +28,6 @@ class Projectile extends Pawn{
         this.speed = [vec[0]*speed/mod, vec[1]*speed/mod] // Applying speed also
         this.centerCanvas = centerCanvas;
         this.distDespawn = Math.sqrt(centerCanvas[0]*centerCanvas[0] + centerCanvas[1]*centerCanvas[1]) + 5*size;
-        this.destroy = false;
     }
 
     Update(){
@@ -45,9 +44,12 @@ class Projectile extends Pawn{
         let dist = [this.centerCanvas[0]-this.pos[0],this.centerCanvas[1]-this.pos[1]];
         dist = Math.sqrt(dist[0]*dist[0] + dist[1]*dist[1]);
         
+        let destroy = false;
         if (dist > this.distDespawn){
-            
+            destroy = true;
         }
+
+        return destroy;
     }
 }
 
@@ -104,6 +106,8 @@ class Game{
     constructor(context){
         this.myGameState = new GameState();
         this.context = context;
+        let tam = canvas.getBoundingClientRect();
+        this.center = [tam.width/2, tam.height/2];
     }
 
     Run(){
@@ -136,27 +140,30 @@ class Game{
         // const speed = 1;
         // const tarjetPos = [x,y];
         // +size/2
-        const newProj = new Projectile(size, pos, color, speed, posTarjet);
+        const newProj = new Projectile(size, pos, color, speed, posTarjet, this.center);
         this.myGameState.AddProjectiles(newProj);
     }
     
     SpawnIncomingProjectiles(numProj, maxSize, minSize, posTarget){
-        const tam = canvas.getBoundingClientRect();
-        const center = [tam.width/2, tam.height/2];
-        const radius = Math.sqrt(center[0]*center[0]+center[1]*center[1]) + maxSize;
-        console.log(radius);
+        
+        const radius = Math.sqrt(this.center[0]*this.center[0]+this.center[1]*this.center[1]) + maxSize;
         
         for (let i=0; i < numProj; i++){
             const randSize = Math.random() * (maxSize - minSize) + minSize;
             const randAngPos = Math.random() * (Math.PI*2);
-            const x = center[0] + radius * Math.cos(randAngPos);
-            const y = center[1] + radius * Math.sin(randAngPos);
+            const x = this.center[0] + radius * Math.cos(randAngPos);
+            const y = this.center[1] + radius * Math.sin(randAngPos);
             this.SpawnProjectile(randSize, [x,y], 'red', 5, posTarget);
-            console.log([x,y]);
         }
     }
-
     
+    DespawnProjectile(){
+        for (let i=0; i < this.myGameState.projectiles.length; i++){
+            if (this.myGameState.projectiles[i].CheckDestroyed()){
+                this.myGameState.projectiles.splice(i,1);
+            }
+        }
+    }
 }
 
 // defaultPlayer();
@@ -168,12 +175,17 @@ myGame.Run();
 
 // Move this to his own class in the future
 addEventListener('click', (e) => {
-    myGame.SpawnProjectile(20, [e.x,e.y], 'red', 3, [innerWidth/2,innerHeight/2]);
+    myGame.SpawnProjectile(20, [e.x,e.y], 'red', 5, [innerWidth/2,innerHeight/2]);
 });
 
 document.addEventListener('keypress', (e) => {
     if (e.key == 'q'){
-        myGame.SpawnIncomingProjectiles(10, 30, 15, [innerWidth/2,innerHeight/2]);
+        myGame.SpawnIncomingProjectiles(2, 30, 15, [innerWidth/2,innerHeight/2]);
     }
 
 });
+
+setInterval(() => {
+    myGame.DespawnProjectile();
+    console.log(myGame.myGameState.projectiles);
+}, 1000)
