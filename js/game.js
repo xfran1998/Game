@@ -13,7 +13,7 @@ class Pawn{
     }
 
     Update(tarjetPos){
-        this.pos = [this.pos[0]+tarjetPos[0], this.pos[1]+tarjetPos[1]];
+        this.pos = [this.pos[0]+tarjetPos[0]*this.speed, this.pos[1]+tarjetPos[1]*this.speed];
     }  
 }
 
@@ -24,13 +24,14 @@ class Projectile extends Pawn{
         // Getting vector towards player normalized
         let vec = [targetPos[0] - pos[0], targetPos[1] - pos[1]];
         let mod = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
-        this.speed = [vec[0]*speed/mod, vec[1]*speed/mod] // Applying speed also
+
+        this.mov = [vec[0]/mod, vec[1]/mod]
         this.centerCanvas = centerCanvas;
         this.distDespawn = Math.sqrt(centerCanvas[0]*centerCanvas[0] + centerCanvas[1]*centerCanvas[1]) + 5*size;
     }
 
     Update(){
-        super.Update(this.speed);
+        super.Update(this.mov);
     }
 
     CheckDestroyed(){
@@ -56,6 +57,11 @@ class Player extends Pawn{
     constructor(size, pos, color, speed, name){
         super(size, pos, color, speed);
         this.name = name;
+    }
+
+    Update(dir){
+        dir = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1]);
+        super.Update(dir);
     }
 }
 
@@ -172,21 +178,74 @@ myGame.SpawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 0, '');
 myGame.Run();
 
 
-// Move this to his own class in the future
+// Move keybinding this to his own class in the future
+
+// Click - Spawn projectile to mouse pos
 addEventListener('click', (e) => {
     myGame.SpawnProjectile(15, [innerWidth/2,innerHeight/2], 'red', 10, [e.x,e.y]);
 });
 
+// Q key - Spawn multiple projectiles to player pos
 document.addEventListener('keypress', (e) => {
-    if (e.key == 'q'){
+    if (e.key == 'q' || e.key == 'Q'){
         myGame.SpawnIncomingProjectiles(5, 30, 15, [innerWidth/2,innerHeight/2]);
     }
 });
 
+let dir = [0,0];
+
+// Player Movement 
+document.addEventListener('keydown', (e) => {
+    // W - UP
+    if (e.key == 'w' || e.key == 'W'){
+        dir[1] = 1;
+
+    } // S - DOWN
+    else if (e.key == 's' || e.key == 'S'){
+        dir[1] = -1;
+        
+    } // A - LEFT
+    else if (e.key == 'a' || e.key == 'A'){
+        dir[0] = -1;
+        
+    } // D - RIGHT
+    else if (e.key == 'd' || e.key == 'D'){
+        dir[0] = 1;
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    // W - UP
+    if (e.key == 'w' || e.key == 'W'){
+        if (dir[1] == 1){
+            dir[1] = 0;   
+        }
+
+    } // S - DOWN
+    else if (e.key == 's' || e.key == 'S'){
+        if (dir[1] == -1){
+            dir[1] = 0;   
+        }
+        
+    } // A - LEFT
+    else if (e.key == 'a' || e.key == 'A'){
+        if (dir[0] == -1){
+            dir[0] = 0;   
+        }
+        
+    } // D - RIGHT
+    else if (e.key == 'd' || e.key == 'D'){
+        if (dir[0] == 1){
+            dir[0] = 0;   
+        }
+    }
+});
+
+
 setInterval(() => {
     myGame.DespawnProjectile();
-    // console.log(myGame.myGameState.projectiles);
-}, 1000);
+    // console.log(dir);
+}, 100);
 
 
 // Player can move on his field but never go throw
