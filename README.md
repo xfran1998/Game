@@ -4,7 +4,7 @@
 * 1: Projectile from player to mouse pointer when player click (posible couldown)
 * 2: Projectiles that go to player last position
 
-#### 1 - To player click
+#### 1 - To player (When player hit Q)
 * Origin: Player ( [P1,P2] )
 * Tarjet: Mouse Pos ( [M1,M2] )
 
