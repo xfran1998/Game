@@ -4,6 +4,18 @@ const context = canvas.getContext('2d');
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
+class GMath {
+    static NormalizeVector(vec){
+        let mod = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+
+        let mov = [vec[0]/mod, vec[1]/mod];
+
+
+        console.log(mov);
+        return mov;
+    }
+}
+
 class Pawn{
     constructor(size, pos, color, speed){
         this.size = size;
@@ -22,10 +34,9 @@ class Projectile extends Pawn{
         super(size, pos, color, speed);
 
         // Getting vector towards player normalized
-        let vec = [targetPos[0] - pos[0], targetPos[1] - pos[1]];
-        let mod = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+        let vec = [targetPos[0] - pos[0], targetPos[1] - pos[1]]
+        this.mov = GMath.NormalizeVector(vec);
 
-        this.mov = [vec[0]/mod, vec[1]/mod]
         this.centerCanvas = centerCanvas;
         this.distDespawn = Math.sqrt(centerCanvas[0]*centerCanvas[0] + centerCanvas[1]*centerCanvas[1]) + 5*size;
     }
@@ -59,7 +70,8 @@ class Player extends Pawn{
         this.name = name;
     }
 
-    Update(dir){
+    // Move toward espefic target, this a
+    Move(dir){
         dir = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1]);
         super.Update(dir);
     }
@@ -244,7 +256,7 @@ document.addEventListener('keyup', (e) => {
 
 setInterval(() => {
     myGame.DespawnProjectile();
-    // console.log(dir);
+    //console.log(dir);
 }, 100);
 
 
