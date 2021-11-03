@@ -7,11 +7,11 @@ canvas.height = innerHeight;
 class GMath {
     static NormalizeVector(vec){
         let mod = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+        let mov = [0, 0];
+        if (mod != 0){
+            mov = [vec[0]/mod, vec[1]/mod];
+        }
 
-        let mov = [vec[0]/mod, vec[1]/mod];
-
-
-        console.log(mov);
         return mov;
     }
 }
@@ -26,6 +26,7 @@ class Pawn{
 
     Update(tarjetPos){
         this.pos = [this.pos[0]+tarjetPos[0]*this.speed, this.pos[1]+tarjetPos[1]*this.speed];
+        console.log(tarjetPos);
     }  
 }
 
@@ -72,8 +73,9 @@ class Player extends Pawn{
 
     // Move toward espefic target, this a
     Move(dir){
-        dir = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1]);
+        dir = GMath.NormalizeVector(dir);
         super.Update(dir);
+        //console.log(dir);
     }
 }
 
@@ -135,6 +137,10 @@ class Game{
         Display.Draw(this.myGameState, this.context);
     }
 
+    PlayerMove(direction){
+        this.myGameState.players[0].Move(direction);
+    }
+
     SpawnPlayer(size, pos, color, speed, name){
         // const x = innerWidth / 2;
         // const y = innerHeight / 2;
@@ -186,7 +192,7 @@ class Game{
 // defaultPlayer();
 // defaultProjectile();
 let myGame = new Game(context);
-myGame.SpawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 0, '');
+myGame.SpawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 10, '');
 myGame.Run();
 
 
@@ -210,11 +216,11 @@ let dir = [0,0];
 document.addEventListener('keydown', (e) => {
     // W - UP
     if (e.key == 'w' || e.key == 'W'){
-        dir[1] = 1;
+        dir[1] = -1;
 
     } // S - DOWN
     else if (e.key == 's' || e.key == 'S'){
-        dir[1] = -1;
+        dir[1] = 1;
         
     } // A - LEFT
     else if (e.key == 'a' || e.key == 'A'){
@@ -229,13 +235,13 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => {
     // W - UP
     if (e.key == 'w' || e.key == 'W'){
-        if (dir[1] == 1){
+        if (dir[1] == -1){
             dir[1] = 0;   
         }
 
     } // S - DOWN
     else if (e.key == 's' || e.key == 'S'){
-        if (dir[1] == -1){
+        if (dir[1] == 1){
             dir[1] = 0;   
         }
         
@@ -256,8 +262,11 @@ document.addEventListener('keyup', (e) => {
 
 setInterval(() => {
     myGame.DespawnProjectile();
-    //console.log(dir);
 }, 100);
+
+setInterval(() => {
+    myGame.PlayerMove(dir);
+}, 10);
 
 
 // Player can move on his field but never go throw
