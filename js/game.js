@@ -26,13 +26,29 @@ class Pawn{
 
     Update(tarjetPos){
         this.pos = [this.pos[0]+tarjetPos[0]*this.speed, this.pos[1]+tarjetPos[1]*this.speed];
-        console.log(tarjetPos);
+        // console.log(tarjetPos);
+    }  
+
+    UpdateValid(tarjetPos, center){
+        let newPos = [this.pos[0]+tarjetPos[0]*this.speed, this.pos[1]+tarjetPos[1]*this.speed];
+        
+        // Check inside cambas x axis
+        if (center[0]*2-this.size < newPos[0]) this.pos[0] = center[0]*2-this.size;
+        else if(newPos[0] < this.size) this.pos[0] = this.size;
+        else this.pos[0] = newPos[0];
+
+        // Check inside cambas y axis
+        if (center[1]*2-this.size < newPos[1]) this.pos[1] = center[1]*2-this.size;
+        else if(newPos[1] < this.size) this.pos[1] = this.size;
+        else this.pos[1] = newPos[1];
+        // console.log(tarjetPos);
     }  
 }
 
 class Projectile extends Pawn{
-    constructor(size, pos, color, speed, targetPos, centerCanvas){
+    constructor(size, pos, color, speed, targetPos, centerCanvas, enemy){
         super(size, pos, color, speed);
+        this.enemy = enemy;
 
         // Getting vector towards player normalized
         let vec = [targetPos[0] - pos[0], targetPos[1] - pos[1]]
@@ -66,16 +82,22 @@ class Projectile extends Pawn{
 }
 
 class Player extends Pawn{
-    constructor(size, pos, color, speed, name){
+    constructor(size, pos, color, speed, name, health){
         super(size, pos, color, speed);
         this.name = name;
+        this.health = health;
     }
 
     // Move toward espefic target, this a
-    Move(dir){
+    Move(dir, center){
         dir = GMath.NormalizeVector(dir);
-        super.Update(dir);
-        //console.log(dir);
+    
+        super.UpdateValid(dir, center);
+        // console.log((center[0]*2-this.size) > this.pos[0] && this.pos[0] > (0+this.size));
+    }
+
+    GetPos(){
+        return this.pos;
     }
 }
 
@@ -106,6 +128,9 @@ class Display{
         myGameState.players.forEach(player => {
             Display.DrawPawn(player, context);
         });
+
+        let player = myGame.myGameState.players[0];
+        Display.DrawHealthBar(player, context);
     }
 
     static DrawPawn(pawn, context){
@@ -118,6 +143,27 @@ class Display{
     static ClearScreen(context){
         const tam = canvas.getBoundingClientRect();
         context.clearRect(0, 0, tam.width, tam.height);
+    }
+
+    static DrawHealthBar(player, context){
+        // Border
+        let pos = [20,20];
+        let tamBorder = [200, 30];
+        let tamHealth = [player.health, 30];
+        let stroke = 3;
+
+        // Player green health
+        context.beginPath();
+        context.rect(pos[0], pos[1], tamHealth[0], tamHealth[1]);
+        context.fillStyle = "green";           
+        context.fill(); 
+        
+        // Border of the player health
+        context.beginPath();
+        context.rect(pos[0], pos[1], tamBorder[0], tamBorder[1]);
+        context.lineWidth = stroke;
+        context.strokeStyle = 'black';
+        context.stroke();        
     }
 }
 
@@ -138,10 +184,18 @@ class Game{
     }
 
     PlayerMove(direction){
-        this.myGameState.players[0].Move(direction);
+        this.myGameState.players[0].Move(direction, this.center);
     }
 
-    SpawnPlayer(size, pos, color, speed, name){
+    PlayerDmg(player, dmg){
+        player.health -= dmg;
+
+        if (player.health < 0){
+            player.health = 0;
+        }
+    }
+
+    SpawnPlayer(size, pos, color, speed, name, health){
         // const x = innerWidth / 2;
         // const y = innerHeight / 2;
         // const size = 50;
@@ -150,11 +204,11 @@ class Game{
         // const speed = 1;
         // const name = "Player01";
     
-        const newPlayer = new Player(size, pos, color, speed, name);
+        const newPlayer = new Player(size, pos, color, speed, name, health);
         this.myGameState.AddPlayer(newPlayer);
     }
     
-    SpawnProjectile(size, pos, color, speed, posTarjet){
+    SpawnProjectile(size, pos, color, speed, posTarjet, owner){
         // const x = innerWidth / 2;
         // const y = innerHeight / 2;
         // const size = 30;
@@ -163,11 +217,13 @@ class Game{
         // const speed = 1;
         // const tarjetPos = [x,y];
         // +size/2
-        const newProj = new Projectile(size, pos, color, speed, posTarjet, this.center);
+
+        let enemyPlayer = owner == this.myGameState.players[0] ? this.myGameState.players[1] : this.myGameState.players[0];
+        const newProj = new Projectile(size, pos, color, speed, posTarjet, this.center, enemyPlayer);
         this.myGameState.AddProjectiles(newProj);
     }
     
-    SpawnIncomingProjectiles(numProj, maxSize, minSize, posTarget){
+    SpawnIncomingProjectiles(numProj, maxSize, minSize, color, posTarget, owner){
         
         const radius = Math.sqrt(this.center[0]*this.center[0]+this.center[1]*this.center[1]) + maxSize;
         
@@ -176,7 +232,9 @@ class Game{
             const randAngPos = Math.random() * (Math.PI*2);
             const x = this.center[0] + radius * Math.cos(randAngPos);
             const y = this.center[1] + radius * Math.sin(randAngPos);
-            this.SpawnProjectile(randSize, [x,y], 'red', 5, posTarget);
+
+            
+            this.SpawnProjectile(randSize, [x,y], color, 5, posTarget, owner);
         }
     }
     
@@ -187,12 +245,30 @@ class Game{
             }
         }
     }
+
+    ProjectileHitEnemy(){
+        for (let i=0; i < this.myGameState.projectiles.length; i++){
+            let vec = [this.myGameState.projectiles[i].enemy.pos[0] - this.myGameState.projectiles[i].pos[0], this.myGameState.projectiles[i].enemy.pos[1] - this.myGameState.projectiles[i].pos[1]];
+            // console.log(this.myGameState.projectiles[i].pos);
+            let dist = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+            let sizeCombined = this.myGameState.projectiles[i].size + this.myGameState.projectiles[i].enemy.size;
+
+            // console.log("dist: ", dist);
+            // console.log("comb: ", sizeCombined);
+
+            if (dist < (sizeCombined) ){ // If projectile inside enemy
+                this.PlayerDmg(this.myGameState.projectiles[i].enemy, this.myGameState.projectiles[i].size) 
+                console.log("Hit!!");
+            }
+        }
+    }
 }
 
 // defaultPlayer();
 // defaultProjectile();
 let myGame = new Game(context);
-myGame.SpawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 10, '');
+myGame.SpawnPlayer(50, [innerWidth/2,innerHeight/2], 'blue', 10, 'Player1', 200);
+myGame.SpawnPlayer(50, [innerWidth-80,innerHeight/2], 'red', 10, 'Player2', 200);
 myGame.Run();
 
 
@@ -200,13 +276,20 @@ myGame.Run();
 
 // Click - Spawn projectile to mouse pos
 addEventListener('click', (e) => {
-    myGame.SpawnProjectile(15, [innerWidth/2,innerHeight/2], 'red', 10, [e.x,e.y]);
+    let player = myGame.myGameState.players[0];
+    let posPlayer = player.GetPos();
+    myGame.SpawnProjectile(15, posPlayer, 'blue', 10, [e.x,e.y], myGame.myGameState.players[0]);
 });
 
 // Q key - Spawn multiple projectiles to player pos
 document.addEventListener('keypress', (e) => {
     if (e.key == 'q' || e.key == 'Q'){
-        myGame.SpawnIncomingProjectiles(5, 30, 15, [innerWidth/2,innerHeight/2]);
+        // simulating Player 2 pressed Q
+        let player = myGame.myGameState.players[1];
+        let enemyPlayer = player == myGame.myGameState.players[0] ? myGame.myGameState.players[1] : myGame.myGameState.players[0];
+        let enemyPos = enemyPlayer.GetPos();
+        let color = player.color;
+        myGame.SpawnIncomingProjectiles(5, 30, 15,color, enemyPos, player);
     }
 });
 
@@ -262,6 +345,7 @@ document.addEventListener('keyup', (e) => {
 
 setInterval(() => {
     myGame.DespawnProjectile();
+    myGame.ProjectileHitEnemy();
 }, 100);
 
 setInterval(() => {
